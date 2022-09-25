@@ -40,8 +40,9 @@ class SurveyApiController extends Controller
      */
     public function store(StoreSurveyRequest $request)
     {
-        $data = $request->validated();
+        $request->merge(['user_id' => auth()->id()]);
 
+        $data = $request->validated();
         // Check if image was given and save on local file system
         if (isset($data['image'])) {
             $relativePath  = $this->saveImage($data['image']);
@@ -53,6 +54,7 @@ class SurveyApiController extends Controller
         // Create new questions
         foreach ($data['questions'] as $question) {
             $question['survey_id'] = $survey->id;
+            $question['user_id'] = auth()->id();
             $this->createQuestion($question);
         }
 
@@ -230,8 +232,10 @@ class SurveyApiController extends Controller
             ])],
             'description' => 'nullable|string',
             'data' => 'present',
-            'survey_id' => 'exists:App\Models\Survey,id'
+            'survey_id' => 'exists:App\Models\Survey,id',
+            'user_id' => 'exists:App\Models\User,id'
         ]);
+        info($validator->validated());
 
         return SurveyQuestion::create($validator->validated());
     }
